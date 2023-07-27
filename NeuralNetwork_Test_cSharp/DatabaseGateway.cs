@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using NeuralNetwork_Test_cSharp.DTO;
+using System.Linq;
 
 namespace NeuralNetwork_Test_cSharp
 {
@@ -13,7 +14,7 @@ namespace NeuralNetwork_Test_cSharp
             _context.Database.EnsureCreated();
         }   
 
-        public async Task SimulationSaveAsync(SimulationParameters simulationParameters)
+        public async Task SimulationStoreAsync(SimulationParameters simulationParameters)
         {
             try
             {
@@ -31,7 +32,7 @@ namespace NeuralNetwork_Test_cSharp
             try
             {
                 var simulationIds = (await _context.Simulations.ToListAsync().ConfigureAwait(false)).Select(t => t.Id);
-                return simulationIds.OrderByDescending(t => t).First();
+                return simulationIds.OrderByDescending(t => t).FirstOrDefault();
                 
             }
             catch (Exception e)
@@ -40,7 +41,7 @@ namespace NeuralNetwork_Test_cSharp
             }
         }
 
-        public async Task UnitsSaveAsync(List<UnitWrapper> units)
+        public async Task UnitsStoreAsync(UnitWrapper[] units)
         {
             try
             {
@@ -54,13 +55,15 @@ namespace NeuralNetwork_Test_cSharp
             }
         }
 
-        public async Task UnitStepsSaveAsync(UnitWrapper unit)
+        public async Task UnitStepsStoreAsync(UnitWrapper[] units)
         {
             try
             {
-                var dbUnitSteps = DbMapper.ToDb(unit.Identifier.ToString(), unit.XPos, unit.YPos);
-                for(int i = 0; i < dbUnitSteps.Count(); i++)
-                    await _context.UnitSteps.AddRangeAsync(dbUnitSteps[i]).ConfigureAwait(false);
+                for(int i = 0; i < units.Length; i++)
+                {
+                    var dbUnitSteps = DbMapper.ToDb(units[i].Identifier.ToString(), units[i].XPos, units[i].YPos);
+                    await _context.UnitSteps.AddRangeAsync(dbUnitSteps).ConfigureAwait(false);
+                }
                 await _context.SaveChangesAsync().ConfigureAwait(false);
             }
             catch (Exception e)

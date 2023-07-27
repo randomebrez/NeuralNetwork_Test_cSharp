@@ -14,10 +14,10 @@
 
   <ItemGroup>
     <Reference Include="NeuralNetwork">
-      <HintPath>..\..\NeuralNetwork-cSharp\NeuralNetwork\bin\Release\netstandard2.1\publish\NeuralNetwork.dll</HintPath>
+      <HintPath>..\..\NeuralNetwork-cSharp\NeuralNetwork\bin\Debug\netstandard2.1\publish\NeuralNetwork.dll</HintPath>
     </Reference>
     <Reference Include="NeuralNetwork.Abstraction">
-      <HintPath>..\..\NeuralNetwork-cSharp\NeuralNetwork\bin\Release\netstandard2.1\publish\NeuralNetwork.Abstraction.dll</HintPath>
+      <HintPath>..\..\NeuralNetwork-cSharp\NeuralNetwork\bin\Debug\netstandard2.1\publish\NeuralNetwork.Abstraction.dll</HintPath>
     </Reference>
   </ItemGroup>
 

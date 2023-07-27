@@ -12,26 +12,27 @@ namespace NeuralNetwork_Test_cSharp
         private IBrainCalculator _brainCalculator;
 
         private SimulationParameters _simulationParameters;
-        private int _generationId;
         private List<string> _brainNames = new List<string> { "Main" };
 
         private BrainCaracteristics _caracteristic;
 
-        private UnitWrapper[] _units;
+        public int GenerationId;
+        public UnitWrapper[] Units;
 
         public LifeManager(SimulationParameters parameters)
         {
             _simulationParameters = parameters;
             
-            _units = new UnitWrapper[parameters.PopulationNumber];
+            Units = new UnitWrapper[parameters.PopulationNumber];
             _genomeManager = new GenomeManager();
             _brainCalculator = new BrainCalculator();
         }
 
+
         // Initialisation
         public List<UnitWrapper> InitialyzeUnits()
         {
-            _generationId = 0;
+            GenerationId = 0;
             _caracteristic = new BrainCaracteristics
             {
                 IsDecisionBrain = true,
@@ -65,9 +66,9 @@ namespace NeuralNetwork_Test_cSharp
             var units = GenerateRandomUnits(_simulationParameters.PopulationNumber);
 
             for (int i = 0; i < _simulationParameters.PopulationNumber; i++)
-                _units[i] = units[i];
+                Units[i] = units[i];
 
-            return _units.ToList();
+            return Units.ToList();
         }
 
         private List<UnitWrapper> GenerateRandomUnits(int unitNumber)
@@ -86,7 +87,7 @@ namespace NeuralNetwork_Test_cSharp
                     XPos = new List<float> { new Random().Next(_simulationParameters.Xmin, _simulationParameters.Xmax) },
                     YPos = new List<float> { new Random().Next(_simulationParameters.Ymin, _simulationParameters.Ymax) },
                     SimulationId = _simulationParameters.SimulationId,
-                    GenerationId = _generationId
+                    GenerationId = GenerationId
                 }) ;
 
             return result;
@@ -110,22 +111,19 @@ namespace NeuralNetwork_Test_cSharp
             return graphs;
         }
 
+
         // Generation's Life Execution
         public void ExecuteGenerationLife()
         {
-            var consoleLogs = new StringBuilder($"Starting generation {_generationId}");
-            Console.WriteLine(consoleLogs.ToString());
             for (int i = 0; i < _simulationParameters.UnitLifeSpan; i++)
                 ExecuteLifeStep();
-
-            _generationId++;
         }
 
         private void ExecuteLifeStep()
         {
             for (int j = 0; j < _simulationParameters.PopulationNumber; j++)
             {
-                var currentUnit = _units[j];
+                var currentUnit = Units[j];
                 var inputs = new Dictionary<string, List<float>>
                 {
                     { "Main", GetInputs(currentUnit) }
@@ -155,7 +153,7 @@ namespace NeuralNetwork_Test_cSharp
             var decisionBrain = unit.Unit.BrainGraph.DecisionBrain;
             var outputs = decisionBrain.Neurons.OutputLayer.Neurons.ToList();
             (int bestOutputIndex, float bestOutputValue) = (-1, 0);
-            for (int i = 0; i < outputs.Count; i++)
+            for (int i = 0; i < outputs.Count(); i++)
             {
                 if (outputs[i].Value > bestOutputValue)
                     (bestOutputIndex, bestOutputValue) = (outputs[i].Id, outputs[i].Value);
@@ -228,6 +226,7 @@ namespace NeuralNetwork_Test_cSharp
             }
         }
 
+
         // Reproduction
         public (int survivorNumber, int randomUnitNumber, float meanScore) ReproduceUnits()
         {
@@ -248,20 +247,21 @@ namespace NeuralNetwork_Test_cSharp
 
             for(int i = 0; i < childrenUnits.Length; i++)
             {
-                _units[i] = new UnitWrapper
+                Units[i] = new UnitWrapper
                 {
                     Unit = childrenUnits[i],
                     XPos = new List<float> { new Random().Next(_simulationParameters.Xmin, _simulationParameters.Xmax) },
                     YPos = new List<float> { new Random().Next(_simulationParameters.Ymin, _simulationParameters.Ymax) },
                     SimulationId = _simulationParameters.SimulationId,
-                    GenerationId = _generationId
+                    GenerationId = GenerationId
                 };
             }
             for(int i = 0; i < randomChildren.Count; i++)
             {
-                _units[i + childrenUnits.Length] = randomChildren[i];
+                Units[i + childrenUnits.Length] = randomChildren[i];
             }
 
+            GenerationId++;
             return (survivorNumber, remainingUnitToGenerate, meanScore);
         }
 
@@ -308,14 +308,15 @@ namespace NeuralNetwork_Test_cSharp
             return result.ToArray();
         }
 
+
         //Selection
         private List<UnitWrapper> SelectBestUnitRightSide(float xPosMin)
         {
             var survivors = new List<UnitWrapper>();
             for(int i = 0; i < _simulationParameters.PopulationNumber; i++)
             {
-                if (_units[i].XPos[^1] > xPosMin)
-                    survivors.Add(_units[i]);
+                if (Units[i].XPos[^1] > xPosMin)
+                    survivors.Add(Units[i]);
             }
 
             return survivors;
@@ -326,10 +327,10 @@ namespace NeuralNetwork_Test_cSharp
             var survivors = new List<UnitWrapper>();
             for (int i = 0; i < _simulationParameters.PopulationNumber; i++)
             {
-                var currentXpos = _units[i].XPos[^1];
-                var currentYpos = _units[i].YPos[^1];
+                var currentXpos = Units[i].XPos[^1];
+                var currentYpos = Units[i].YPos[^1];
                 if (currentXpos >= xPosMin && currentXpos <= xPosMax && currentYpos >= yPosMin && currentYpos <= yPosMax)
-                    survivors.Add(_units[i]);
+                    survivors.Add(Units[i]);
             }
 
             return survivors;
@@ -342,16 +343,16 @@ namespace NeuralNetwork_Test_cSharp
             var meanScore = 0f;
             for (int i = 0; i < _simulationParameters.PopulationNumber; i++)
             {
-                var currentXpos = _units[i].XPos[^1];
-                var currentYpos = _units[i].YPos[^1];
+                var currentXpos = Units[i].XPos[^1];
+                var currentYpos = Units[i].YPos[^1];
 
                 var radiusPos = currentXpos * currentXpos + currentYpos * currentYpos;
-                _units[i].Score = radiusPos;
+                Units[i].Score = radiusPos;
 
                 meanScore += radiusPos;
             }
 
-            var orderedUnits = _units.OrderBy(t => t.Score).ToList();
+            var orderedUnits = Units.OrderBy(t => t.Score).ToList();
             var selectedUnits = orderedUnits.Where(t => t.Score < radius * radius);
             survivorNumber = selectedUnits.Count();
 

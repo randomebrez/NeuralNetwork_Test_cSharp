@@ -14,8 +14,8 @@ var simulationParameters = new SimulationParameters
     Center = 0,
 };
 
-var connexionString = "C:\\Users\\nico-\\Documents\\Codes\\Visual Studio 2022\\Projects\\NeuralNetwork_Test_cSharp\\dataBase.db";
+var connexionString = "D:\\Codes\\VisualStudio\\NeuralNetwork_Test_cSharp\\dataBase.db";
 var simulationManager = new SimulationsManager(connexionString, false);
 
 simulationManager.InitialyzeNewSimulationAsync(simulationParameters).GetAwaiter().GetResult();
-simulationManager.ExecuteLife();
+simulationManager.ExecuteLifeAsync().GetAwaiter().GetResult();

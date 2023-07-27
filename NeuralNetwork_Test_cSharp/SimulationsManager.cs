@@ -24,25 +24,28 @@ namespace NeuralNetwork_Test_cSharp
         {
             _simulationParameters = simulationParameters;
             //Store simulation parameters
-            await _databaseGateway.SimulationSaveAsync(simulationParameters).ConfigureAwait(false);
+            await _databaseGateway.SimulationStoreAsync(simulationParameters).ConfigureAwait(false);
             //GetLastSimulationId
-            var simulationId = await _databaseGateway.LastSimulationIdGetAsync().ConfigureAwait(false);
+            _simulationParameters.SimulationId = await _databaseGateway.LastSimulationIdGetAsync().ConfigureAwait(false);
 
             //CreateFirstUnits
             _lifeManager = new LifeManager(simulationParameters);
-            var units = _lifeManager.InitialyzeUnits();
-            //Store new units
-            await _databaseGateway.UnitsSaveAsync(units).ConfigureAwait(false);
+            _lifeManager.InitialyzeUnits();
+           
         }
 
-        public void ExecuteLife()
+        public async Task ExecuteLifeAsync()
         {
             var endCondition = false;
             while (endCondition == false)
             {
-                var consoleLogs = new StringBuilder();
-                _lifeManager.ExecuteGenerationLife();
+                var consoleLogs = new StringBuilder($"Starting generation {_lifeManager.GenerationId}\n");
+                await _databaseGateway.UnitsStoreAsync(_lifeManager.Units).ConfigureAwait(false);
                 
+                
+                _lifeManager.ExecuteGenerationLife();
+
+                await _databaseGateway.UnitStepsStoreAsync(_lifeManager.Units);
                 var (survivorNumber, randomUnitNumber, meanScore) = _lifeManager.ReproduceUnits();
                 endCondition = ((float)survivorNumber / _simulationParameters.PopulationNumber) >= _endConditionTreshold;
 
