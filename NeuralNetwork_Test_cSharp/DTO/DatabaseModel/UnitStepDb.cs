@@ -12,10 +12,10 @@ namespace NeuralNetwork_Test_cSharp.DTO.DatabaseModel
         [Column("unit_identifier"), Required]
         public string UnitIdentifier { get; set; }
 
-        [Column("life_step_id"), Required]
-        public int LifeStepId { get; set; }
+        [Column("life_steps"), Required]
+        public string LifeSteps { get; set; }
 
-        [Column("position"), Required]
-        public string Position { get; set; }
+        [Column("positions"), Required]
+        public string Positions { get; set; }
     }
 }

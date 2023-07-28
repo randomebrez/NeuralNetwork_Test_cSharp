@@ -17,7 +17,8 @@
 
         // Circular constraints
         public float Radius { get; set; }
-        public float Center { get; set; }
+        public float xCenter { get; set; }
+        public float yCenter { get; set; }
 
         // Rectangle Constraints
         public float RecXmin { get; set; }

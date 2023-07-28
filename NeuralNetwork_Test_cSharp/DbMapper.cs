@@ -1,10 +1,6 @@
 ﻿using NeuralNetwork_Test_cSharp.DTO;
 using NeuralNetwork_Test_cSharp.DTO.DatabaseModel;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace NeuralNetwork_Test_cSharp
 {
@@ -16,11 +12,12 @@ namespace NeuralNetwork_Test_cSharp
             {
                 EnvironmentLimits = $"{simulation.Xmin}:{simulation.Xmax}:{simulation.Ymin}:{simulation.Ymax}",
                 SelectionShape = ToDb(simulation.SelectionShape),
+                UnitLifeSpan = simulation.UnitLifeSpan
             };
             switch (simulation.SelectionShape)
             {
                 case SelectionShapeEnum.Circular:
-                    simulationDb.SelectionConstraints = $"{simulation.Center}:{simulation.Radius}";
+                    simulationDb.SelectionConstraints = $"{simulation.xCenter}:{simulation.yCenter}:{simulation.Radius}";
                     break;
                 case SelectionShapeEnum.Rectangle:
                     simulationDb.SelectionConstraints = $"{simulation.RecXmin}:{simulation.RecXmax}:{simulation.RecYmin}:{simulation.RecYmax}";
@@ -36,6 +33,8 @@ namespace NeuralNetwork_Test_cSharp
             return new UnitDb
             {
                 Identifier = unit.Identifier.ToString(),
+                ParentA = unit.Unit.ParentA.ToString(),
+                ParentB = unit.Unit.ParentB.ToString(),
                 GenerationId = unit.GenerationId,
                 SimulationId = unit.SimulationId,
                 SelectionScore = unit.Score
@@ -45,15 +44,25 @@ namespace NeuralNetwork_Test_cSharp
         public static List<UnitStepDb> ToDb(string unitIdentifier, List<float> xPos, List<float> yPos)
         {
             var result = new List<UnitStepDb>();
-            for(int i = 0; i < xPos.Count(); i++)
+            var currentIndex = 0;
+            while(currentIndex < xPos.Count)
             {
-                result.Add(new UnitStepDb
+                var maxIndex = Math.Min(xPos.Count(), currentIndex + 50);
+                var unitSteps = new UnitStepDb
                 {
                     UnitIdentifier = unitIdentifier,
-                    LifeStepId = i,
-                    Position = $"{xPos[i]}:{yPos[i]}"
-                });
+                    LifeSteps = $"{currentIndex}-{maxIndex}"
+                };
+                var positions = new StringBuilder();
+                for (int i = currentIndex; i < maxIndex; i++)
+                    positions.Append($"{xPos[i]}:{yPos[i]}!");
+
+                unitSteps.Positions = positions.ToString();
+                result.Add(unitSteps);
+
+                currentIndex = maxIndex;
             }
+            
             return result;
         }
 

@@ -9,6 +9,7 @@ namespace NeuralNetwork_Test_cSharp.DTO
         public Context(string connectionString)
         {
             _connectionString = connectionString;
+            ChangeTracker.LazyLoadingEnabled = false;
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

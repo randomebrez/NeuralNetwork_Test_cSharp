@@ -40,13 +40,15 @@ namespace NeuralNetwork_Test_cSharp
             while (endCondition == false)
             {
                 var consoleLogs = new StringBuilder($"Starting generation {_lifeManager.GenerationId}\n");
-                await _databaseGateway.UnitsStoreAsync(_lifeManager.Units).ConfigureAwait(false);
-                
+                var start = DateTime.UtcNow;                
                 
                 _lifeManager.ExecuteGenerationLife();
+                var meanScore = _lifeManager.UnitScoreAssign();
 
-                await _databaseGateway.UnitStepsStoreAsync(_lifeManager.Units);
-                var (survivorNumber, randomUnitNumber, meanScore) = _lifeManager.ReproduceUnits();
+                await StoreDatasAsync().ConfigureAwait(false);
+
+                var survivorNumber = _lifeManager.SurvivorNumberCount();
+                var randomUnitNumber = _lifeManager.ReproduceUnits();
                 endCondition = ((float)survivorNumber / _simulationParameters.PopulationNumber) >= _endConditionTreshold;
 
                 consoleLogs.AppendLine($"Survivor number : {survivorNumber}");
@@ -62,9 +64,10 @@ namespace NeuralNetwork_Test_cSharp
         
 
         // Called after each generation
-        public void StoreDatas()
+        public async Task StoreDatasAsync()
         {
-            // Store unit steps
+            await _databaseGateway.UnitsStoreAsync(_lifeManager.Units).ConfigureAwait(false);
+            await _databaseGateway.UnitStepsStoreAsync(_lifeManager.Units);
         }
     }
 }

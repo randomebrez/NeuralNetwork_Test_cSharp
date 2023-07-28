@@ -12,6 +12,12 @@ namespace NeuralNetwork_Test_cSharp.DTO.DatabaseModel
         [Column("unit_identifier"), Required]
         public string Identifier { get; set; }
 
+        [Column("parent_a"), Required]
+        public string ParentA { get; set; }
+
+        [Column("parent_b"), Required]
+        public string ParentB{ get; set; }
+
         [Column("generation_id"), Required]
         public int GenerationId { get; set; }
 

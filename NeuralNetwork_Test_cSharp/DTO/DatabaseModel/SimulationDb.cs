@@ -18,6 +18,9 @@ namespace NeuralNetwork_Test_cSharp.DTO.DatabaseModel
         [Column("selection_constraints"), Required]
         public string SelectionConstraints { get; set; }
 
+        [Column("unit_life_span"), Required]
+        public int UnitLifeSpan { get; set; }
+
         //[ForeignKey(nameof(UnitId))]
         //public UnitDb Unit { get; set; }
     }
