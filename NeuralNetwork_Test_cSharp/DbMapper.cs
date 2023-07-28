@@ -8,12 +8,17 @@ namespace NeuralNetwork_Test_cSharp
     {
         public static SimulationDb ToDb(SimulationParameters simulation)
         {
+            var envLimits = new StringBuilder();
+            foreach (var dimension in simulation.SpaceDimensions)
+                envLimits.Append($"{dimension.Value.min}:{dimension.Value.max}:");
+
             var simulationDb = new SimulationDb
             {
-                EnvironmentLimits = $"{simulation.Xmin}:{simulation.Xmax}:{simulation.Ymin}:{simulation.Ymax}",
+                EnvironmentLimits = envLimits.ToString(),
                 SelectionShape = ToDb(simulation.SelectionShape),
                 UnitLifeSpan = simulation.UnitLifeSpan
             };
+
             switch (simulation.SelectionShape)
             {
                 case SelectionShapeEnum.Circular:

@@ -2,7 +2,6 @@
 using NeuralNetwork.Abstraction.Model;
 using NeuralNetwork.Implementations;
 using NeuralNetwork_Test_cSharp.DTO;
-using System.Text;
 
 namespace NeuralNetwork_Test_cSharp
 {
@@ -44,7 +43,6 @@ namespace NeuralNetwork_Test_cSharp
 
             return Units.ToList();
         }
-
         private List<UnitWrapper> GenerateRandomUnits(int unitNumber)
         {
             var result = new List<UnitWrapper>();
@@ -55,18 +53,28 @@ namespace NeuralNetwork_Test_cSharp
             var units = _genomeManager.UnitsFromGenomeGraphList(graphs);
 
             for (int i = 0; i < unitNumber; i++)
-                result.Add(new UnitWrapper
-                {
-                    Unit = units[i],
-                    XPos = new List<float> { new Random().Next(_simulationParameters.Xmin, _simulationParameters.Xmax) },
-                    YPos = new List<float> { new Random().Next(_simulationParameters.Ymin, _simulationParameters.Ymax) },
-                    SimulationId = _simulationParameters.SimulationId,
-                    GenerationId = GenerationId
-                }) ;
+                result.Add(UnitBuild(units[i]));
 
             return result;
         }
+        private UnitWrapper UnitBuild(Unit unit)
+        {
+            var initialCoordinates = new List<float>();
+            foreach (var dimension in _simulationParameters.SpaceDimensions)
+                initialCoordinates.Add(new Random().Next(dimension.Value.min, dimension.Value.max));
 
+            var newUnit = new UnitWrapper
+            {
+                Unit = unit,
+                CurrentPosition = new SpacePosition(initialCoordinates.ToArray()),
+                SimulationId = _simulationParameters.SimulationId,
+                GenerationId = GenerationId
+            };
+            newUnit.XPos = new List<float> { newUnit.CurrentPosition.GetCoordinate(0) };
+            newUnit.YPos = new List<float> { newUnit.CurrentPosition.GetCoordinate(1) };
+
+            return newUnit;
+        }
         private List<GenomeGraph> GenomeGraphGet(List<GenomeWrapper> genomes)
         {
             var graphs = new List<GenomeGraph>();
@@ -94,155 +102,142 @@ namespace NeuralNetwork_Test_cSharp
             for (int i = 0; i < _simulationParameters.UnitLifeSpan; i++)
                 ExecuteLifeStep();
         }
-
         private void ExecuteLifeStep()
         {
             for (int j = 0; j < _simulationParameters.PopulationNumber; j++)
             {
                 var currentUnit = Units[j];
-                var inputs = new Dictionary<string, List<float>>
+
+                UnitCompute(currentUnit);
+                UnitMove(currentUnit);
+            }
+        }
+
+
+        // Unit brain managment
+        private void UnitCompute(UnitWrapper unit)
+        {
+            var inputs = new Dictionary<string, List<float>>
                 {
-                    { "Main", GetInputs(currentUnit) }
+                    { "Main", GetInputs(unit) }
                 };
 
-                _brainCalculator.BrainGraphCompute(currentUnit.Unit.BrainGraph, inputs);
-                MoveUnit(currentUnit, false);
-            }
+            _brainCalculator.BrainGraphCompute(unit.Unit.BrainGraph, inputs);
         }
-
         private List<float> GetInputs(UnitWrapper unit)
         {
-            var currentXpos = unit.XPos[^1];
-            var currentYpos = unit.YPos[^1];
-            return new List<float>
+            var result = new List<float>();
+            foreach (var envLimits in _simulationParameters.SpaceDimensions)
             {
-                1 - (_simulationParameters.Xmax - currentXpos)/(2*_simulationParameters.Xmax),
-                1 - (currentXpos - _simulationParameters.Xmin)/(2*_simulationParameters.Xmax),
-                1 - (_simulationParameters.Ymax - currentYpos)/(2*_simulationParameters.Ymax),
-                1 - (currentYpos - _simulationParameters.Ymin)/(2*_simulationParameters.Ymax)
-            };
-
-        }
-
-        private void MoveUnit(UnitWrapper unit, bool withMessage)
-        {
-            var decisionBrain = unit.Unit.BrainGraph.DecisionBrain;
-            var outputs = decisionBrain.Neurons.OutputLayer.Neurons.ToList();
-            var message = new StringBuilder("Outputs : ");
-            (int bestOutputIndex, float bestOutputValue) = (-1, 0);
-            for (int i = 0; i < outputs.Count(); i++)
-            {
-                if (outputs[i].Value > bestOutputValue)
-                    (bestOutputIndex, bestOutputValue) = (outputs[i].Id, outputs[i].Value);
-                if (withMessage)
-                    message.Append($"{outputs[i].Value},");
+                var dimensionCoordinate = unit.CurrentPosition.GetCoordinate(envLimits.Key);
+                var (min, max) = _simulationParameters.SpaceDimensions[envLimits.Key];
+                var delta = max - min;
+                result.Add(1 - (max - dimensionCoordinate) / delta);
+                result.Add(1 - (dimensionCoordinate - min) / delta);
             }
 
-            if (withMessage)
-                Console.WriteLine(message.ToString());
-            var currentXpos = unit.XPos[^1];
-            var currentYpos = unit.YPos[^1];
+            return result;
 
-            switch (bestOutputIndex)
+        }
+        private void UnitOutputInterpret(UnitWrapper unit, int outputIndex)
+        {
+            switch (outputIndex)
             {
                 case -1:
                     break;
                 case 0:
-                    //Down
-                    if (currentYpos - 1 >= _simulationParameters.Ymin)
-                    {
-                        unit.YPos.Add(currentYpos - 1);
-                        unit.XPos.Add(currentXpos);
-                    }                        
-                    else
-                    {
-                        unit.YPos.Add(currentYpos + 1);
-                        unit.XPos.Add(currentXpos);
-                    }
+                    //Right
+                    Move(unit, 0, 1);
                     break;
                 case 1:
-                    //Up
-                    if (currentYpos + 1 <= _simulationParameters.Ymax)
-                    {
-                        unit.YPos.Add(currentYpos + 1);
-                        unit.XPos.Add(currentXpos);
-                    }
-                    else
-                    {
-                        unit.YPos.Add(currentYpos - 1);
-                        unit.XPos.Add(currentXpos);
-                    }
+                    //Left
+                    Move(unit, 0, -1);
                     break;
                 case 2:
-                    //Right
-                    if (currentXpos + 1 <= _simulationParameters.Xmax)
-                    {
-                        unit.XPos.Add(currentXpos + 1);
-                        unit.YPos.Add(currentYpos);
-                    }
-                    else
-                    {
-                        unit.XPos.Add(currentXpos - 1);
-                        unit.YPos.Add(currentYpos);
-                    }
+                    //Down
+                    Move(unit, 1, -1);
                     break;
                 case 3:
-                    //Left
-                    if (currentXpos - 1 >= _simulationParameters.Xmin)
-                    {
-                        unit.XPos.Add(currentXpos - 1);
-                        unit.YPos.Add(currentYpos);
-                    }
-                    else
-                    {
-                        unit.XPos.Add(currentXpos + 1);
-                        unit.YPos.Add(currentYpos);
-                    }
+                    //Up
+                    Move(unit, 1, 1);
                     break;
                 case 4:
                     RandomMove(unit);
                     break;
                 case 5:
-                    unit.XPos.Add(currentXpos);
-                    unit.YPos.Add(currentYpos);
+                    //No move
                     break;
             }
         }
+        private (int index, float value) HighestOutputGet(Brain brain)
+        {
+            var outputs = brain.Neurons.OutputLayer.Neurons;
 
+            (int highestOutputIndex, float outputValue) = (-1, 0);
+            for (int i = 0; i < outputs.Count(); i++)
+            {
+                if (outputs[i].Value > outputValue)
+                    (highestOutputIndex, outputValue) = (outputs[i].Id, outputs[i].Value);
+            }
+
+            return (highestOutputIndex, outputValue);
+        }
+
+
+        // Unit Movement
+        private void UnitMove(UnitWrapper unit)
+        {
+            var highestOutput = HighestOutputGet(unit.Unit.BrainGraph.DecisionBrain);
+            UnitOutputInterpret(unit, highestOutput.index);
+
+            // Store positions to save in DB
+            unit.XPos.Add(unit.CurrentPosition.GetCoordinate(0));
+            unit.YPos.Add(unit.CurrentPosition.GetCoordinate(1));
+        }
+        private void Move(UnitWrapper unit, int dimensionIndex, float value)
+        {
+            var isMoveLegit = IsMoveLegit(unit, dimensionIndex, value);
+            if (isMoveLegit.legit)
+                unit.CurrentPosition.SetCoordinate(dimensionIndex, isMoveLegit.finalPosition);
+            else
+                Move(unit, dimensionIndex, -value);
+
+        }
         private void RandomMove(UnitWrapper unit)
         {
-            var availablePositions = new List<string>();
-            var currentXpos = unit.XPos[^1];
-            var currentYpos = unit.YPos[^1];
-            if (currentYpos - 1 >= _simulationParameters.Ymin)
-                availablePositions.Add("Down");
-            if (currentYpos + 1 <= _simulationParameters.Ymax)
-                availablePositions.Add("Up");
-            if (currentXpos + 1 <= _simulationParameters.Xmax)
+            var availablePositions = new List<string> { "NoMove" };
+            if (IsMoveLegit(unit, 0, 1).legit)
                 availablePositions.Add("Right");
-            if (currentXpos - 1 >= _simulationParameters.Xmin)
+            if (IsMoveLegit(unit, 0, -1).legit)
                 availablePositions.Add("Left");
+            if (IsMoveLegit(unit, 1, 1).legit)
+                availablePositions.Add("Up");
+            if (IsMoveLegit(unit, 1, -1).legit)
+                availablePositions.Add("Down");
 
             var index = new Random().Next(availablePositions.Count);
             switch(availablePositions[index])
             {
-                case ("Down"):
-                    unit.YPos.Add(currentYpos - 1);
-                    unit.XPos.Add(currentXpos);
+                case "Down":
+                    Move(unit, 1, -1);
                     break;
-                case ("Up"):
-                    unit.YPos.Add(currentYpos + 1);
-                    unit.XPos.Add(currentXpos);
+                case "Up":
+                    Move(unit, 1, -1);
                     break;
-                case ("Right"):
-                    unit.XPos.Add(currentXpos + 1);
-                    unit.YPos.Add(currentYpos);
+                case "Right":
+                    Move(unit, 1, -1);
                     break;
-                case ("Left"):
-                    unit.XPos.Add(currentXpos - 1);
-                    unit.YPos.Add(currentYpos);
+                case "Left":
+                    Move(unit, 1, -1);
+                    break;
+                case "NoMove":
                     break;
             }
+        }
+        private (bool legit, float finalPosition) IsMoveLegit(UnitWrapper unit, int dimensionIndex, float value)
+        {
+            var result = unit.CurrentPosition.GetCoordinate(dimensionIndex) + value;
+            return (result <= _simulationParameters.SpaceDimensions[dimensionIndex].max && result >= _simulationParameters.SpaceDimensions[dimensionIndex].min, result);
         }
 
 
@@ -253,34 +248,23 @@ namespace NeuralNetwork_Test_cSharp
 
             //Select best units
             var bestUnits = SelectBestUnits(0.4f);
-
             var mixedGenomes = GetMixedGenomes(bestUnits);
+
             // Tres bizarre, il faut un graphe a suivre pour reconstruire à partir du dico de <brainName, List<Genome>>
             var genomes = mixedGenomes.ContainsKey("Main") ? mixedGenomes["Main"] : new List<GenomeWrapper>();
             var graphs = GenomeGraphGet(genomes);
             var childrenUnits = _genomeManager.UnitsFromGenomeGraphList(graphs);
-            var remainingUnitToGenerate = _simulationParameters.PopulationNumber - childrenUnits.Length;
 
+            var remainingUnitToGenerate = _simulationParameters.PopulationNumber - childrenUnits.Length;
             var randomChildren = GenerateRandomUnits(remainingUnitToGenerate);
 
             for(int i = 0; i < childrenUnits.Length; i++)
-            {
-                Units[i] = new UnitWrapper
-                {
-                    Unit = childrenUnits[i],
-                    XPos = new List<float> { new Random().Next(_simulationParameters.Xmin, _simulationParameters.Xmax) },
-                    YPos = new List<float> { new Random().Next(_simulationParameters.Ymin, _simulationParameters.Ymax) },
-                    SimulationId = _simulationParameters.SimulationId,
-                    GenerationId = GenerationId
-                };
-            }
-            for(int i = 0; i < randomChildren.Count; i++)
-            {
+                Units[i] = UnitBuild(childrenUnits[i]);
+            for (int i = 0; i < randomChildren.Count; i++)
                 Units[i + childrenUnits.Length] = randomChildren[i];
-            }
+
             return remainingUnitToGenerate;
         }
-
         private Dictionary<string, List<GenomeWrapper>> GetMixedGenomes(List<UnitWrapper> bestUnits)
         {
             var result = new Dictionary<string, List<GenomeWrapper>>();
@@ -313,7 +297,6 @@ namespace NeuralNetwork_Test_cSharp
 
             return result;
         }
-
         private (UnitWrapper parentA, UnitWrapper parentB)[] CreateCouples(List<UnitWrapper> bestUnits)
         {
             var result = new List<(UnitWrapper parentA, UnitWrapper parentB)>();
@@ -348,7 +331,6 @@ namespace NeuralNetwork_Test_cSharp
                     return 0;
             }
         }
-
         public int SurvivorNumberCount()
         {
             switch (_simulationParameters.SelectionShape)
@@ -361,7 +343,15 @@ namespace NeuralNetwork_Test_cSharp
                     return 0;
             }
         }
+        private List<UnitWrapper> SelectBestUnits(float percentageToSelect, bool sortScoreDesc = false)
+        {
+            var orderedUnits = sortScoreDesc ? Units.OrderByDescending(t => t.Score) : Units.OrderBy(t => t.Score);
+            var survivorNumber = SurvivorNumberCount();
+            var maxToTake = Math.Max(survivorNumber, percentageToSelect * _simulationParameters.PopulationNumber);
+            var selected = orderedUnits.Take((int)maxToTake).ToList();
 
+            return selected;
+        }
 
         private float CircularScoreAssign()
         {
@@ -370,8 +360,8 @@ namespace NeuralNetwork_Test_cSharp
             var yCenter = _simulationParameters.yCenter;
             for (int i = 0; i < _simulationParameters.PopulationNumber; i++)
             {
-                var currentXpos = Units[i].XPos[^1];
-                var currentYpos = Units[i].YPos[^1];
+                var currentXpos = Units[i].CurrentPosition.GetCoordinate(0);
+                var currentYpos = Units[i].CurrentPosition.GetCoordinate(1);
 
                 var centerDist = (currentXpos - xCenter) * (currentXpos - xCenter) + (currentYpos - yCenter) * (currentYpos - yCenter);
                 Units[i].Score = centerDist;
@@ -381,22 +371,20 @@ namespace NeuralNetwork_Test_cSharp
 
             return meanScore / _simulationParameters.PopulationNumber;
         }
-
         private int CircularSurvivorNumberCount()
         {
             return Units.Where(t => t.Score < _simulationParameters.Radius * _simulationParameters.Radius).Count();
         }
-
 
         private float RectangleScoreAssign()
         {
             var meanScore = 0f;
             for (int i = 0; i < _simulationParameters.PopulationNumber; i++)
             {
-                var currentXpos = Units[i].XPos[^1];
-                var currentYpos = Units[i].YPos[^1];
+                var currentXpos = Units[i].CurrentPosition.GetCoordinate(0);
+                var currentYpos = Units[i].CurrentPosition.GetCoordinate(1);
 
-                var unitScore = Math.Abs((currentXpos - _simulationParameters.RecXmin) - (_simulationParameters.RecXmax - currentXpos)) + Math.Abs((currentYpos - _simulationParameters.RecYmin) - (_simulationParameters.RecYmax - currentYpos));
+                var unitScore = (float)(Math.Pow(Math.Abs((currentXpos - _simulationParameters.RecXmin) - (_simulationParameters.RecXmax - currentXpos)), 2) + Math.Pow(Math.Abs((currentYpos - _simulationParameters.RecYmin) - (_simulationParameters.RecYmax - currentYpos)), 2));
                 Units[i].Score = unitScore;
 
                 meanScore += unitScore;
@@ -404,7 +392,6 @@ namespace NeuralNetwork_Test_cSharp
 
             return meanScore / _simulationParameters.PopulationNumber;
         }
-
         private int RectangleSurvivorNumberCount()
         {
             var survivorNumber = 0;
@@ -417,17 +404,6 @@ namespace NeuralNetwork_Test_cSharp
             }
 
             return survivorNumber;
-        }
-
-
-        private List<UnitWrapper> SelectBestUnits(float percentageToSelect, bool sortScoreDesc = false)
-        {
-            var orderedUnits = sortScoreDesc ? Units.OrderByDescending(t => t.Score) : Units.OrderBy(t => t.Score);
-            var survivorNumber = SurvivorNumberCount();
-            var maxToTake = Math.Max(survivorNumber, percentageToSelect * _simulationParameters.PopulationNumber);
-            var selected = orderedUnits.Take((int)maxToTake).ToList();
-
-            return selected;
         }
     }
 }

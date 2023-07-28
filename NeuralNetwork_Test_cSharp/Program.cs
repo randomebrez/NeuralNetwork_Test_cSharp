@@ -6,19 +6,20 @@ var simulationParameters = new SimulationParameters
 {
     PopulationNumber = 200,
     UnitLifeSpan = 100,
-    Xmin = -50,
-    Xmax = 50,
-    Ymin = -50,
-    Ymax = 50,
-    SelectionShape = SelectionShapeEnum.Rectangle,
-    RecXmin = -15,
-    RecXmax = 0,
-    RecYmin = 0,
-    RecYmax = 10
-    //SelectionShape = SelectionShapeEnum.Circular,
-    //Radius = 10,
-    //xCenter = 40,
-    //yCenter = -40
+    SpaceDimensions = new Dictionary<int, (int min, int max)>
+    {
+        {0, (-50, 50)},
+        {1, (-40, 40)},
+    },
+    //SelectionShape = SelectionShapeEnum.Rectangle,
+    //RecXmin = -15,
+    //RecXmax = 0,
+    //RecYmin = 0,
+    //RecYmax = 10
+    SelectionShape = SelectionShapeEnum.Circular,
+    Radius = 10,
+    xCenter = 10,
+    yCenter = -10
 };
 var brainCaracteristics = new BrainCaracteristics
 {

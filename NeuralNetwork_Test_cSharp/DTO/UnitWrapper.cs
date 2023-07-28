@@ -15,7 +15,7 @@ namespace NeuralNetwork_Test_cSharp.DTO
         public int GenerationId { get; set; }
         public Unit Unit { get; set; }
         public float Score { get; set; }
-
+        public SpacePosition CurrentPosition { get; set; }
         public List<float> XPos { get; set; }
         public List<float> YPos { get; set; }
     }
