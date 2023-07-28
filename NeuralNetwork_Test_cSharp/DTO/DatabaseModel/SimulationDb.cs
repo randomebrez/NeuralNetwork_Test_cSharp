@@ -20,8 +20,5 @@ namespace NeuralNetwork_Test_cSharp.DTO.DatabaseModel
 
         [Column("unit_life_span"), Required]
         public int UnitLifeSpan { get; set; }
-
-        //[ForeignKey(nameof(UnitId))]
-        //public UnitDb Unit { get; set; }
     }
 }

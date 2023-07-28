@@ -11,16 +11,12 @@ namespace NeuralNetwork_Test_cSharp.DTO
         }
 
         public Guid Identifier { get; private set; } = Guid.NewGuid();
+        public int SimulationId { get; set; }
+        public int GenerationId { get; set; }
+        public Unit Unit { get; set; }
+        public float Score { get; set; }
 
         public List<float> XPos { get; set; }
         public List<float> YPos { get; set; }
-
-        public Unit Unit { get; set; }
-
-        public float Score { get; set; }
-
-        public int GenerationId { get; set; }
-
-        public int SimulationId { get; set; }
     }
 }

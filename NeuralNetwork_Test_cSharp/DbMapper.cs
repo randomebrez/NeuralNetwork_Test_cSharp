@@ -44,23 +44,24 @@ namespace NeuralNetwork_Test_cSharp
         public static List<UnitStepDb> ToDb(string unitIdentifier, List<float> xPos, List<float> yPos)
         {
             var result = new List<UnitStepDb>();
-            var currentIndex = 0;
-            while(currentIndex < xPos.Count)
+            var currentStepIndex = 0;
+            while(currentStepIndex < xPos.Count)
             {
-                var maxIndex = Math.Min(xPos.Count(), currentIndex + 50);
+                var maxStepIndex = Math.Min(xPos.Count, currentStepIndex + 50);
                 var unitSteps = new UnitStepDb
                 {
                     UnitIdentifier = unitIdentifier,
-                    LifeSteps = $"{currentIndex}-{maxIndex}"
+                    LifeSteps = $"{currentStepIndex}-{maxStepIndex}"
                 };
-                var positions = new StringBuilder();
-                for (int i = currentIndex; i < maxIndex; i++)
-                    positions.Append($"{xPos[i]}:{yPos[i]}!");
 
-                unitSteps.Positions = positions.ToString();
+                var positionsDbValue = new StringBuilder();
+                for (int i = currentStepIndex; i < maxStepIndex; i++)
+                    positionsDbValue.Append($"{xPos[i]}:{yPos[i]}!");
+
+                unitSteps.Positions = positionsDbValue.ToString();
                 result.Add(unitSteps);
 
-                currentIndex = maxIndex;
+                currentStepIndex = maxStepIndex;
             }
             
             return result;
@@ -68,15 +69,12 @@ namespace NeuralNetwork_Test_cSharp
 
         public static string ToDb(SelectionShapeEnum selectionShape)
         {
-            switch(selectionShape)
+            return selectionShape switch
             {
-                case SelectionShapeEnum.Circular:
-                    return "Circular";
-                case SelectionShapeEnum.Rectangle:
-                    return "Rectangle";
-                default:
-                    throw new Exception("Wtf is this");
-            }
+                SelectionShapeEnum.Circular => "Circular",
+                SelectionShapeEnum.Rectangle => "Rectangle",
+                _ => throw new Exception("Wtf is this"),
+            };
         }
     }
 }

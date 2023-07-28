@@ -8,24 +8,26 @@ namespace NeuralNetwork_Test_cSharp
 {
     public class LifeManager
     {
-        private IGenomeManager _genomeManager;
-        private IBrainCalculator _brainCalculator;
+        private readonly IGenomeManager _genomeManager;
+        private readonly IBrainCalculator _brainCalculator;
 
         private SimulationParameters _simulationParameters;
+        private BrainCaracteristics _brainCaracteristic;
         private List<string> _brainNames = new List<string> { "Main" };
 
-        private BrainCaracteristics _caracteristic;
-
+        public int PopulationNumber => _simulationParameters.PopulationNumber;
         public int GenerationId;
         public UnitWrapper[] Units;
 
-        public LifeManager(SimulationParameters parameters)
+        public LifeManager(SimulationParameters parameters, BrainCaracteristics caracteristics)
         {
             _simulationParameters = parameters;
             
             Units = new UnitWrapper[parameters.PopulationNumber];
             _genomeManager = new GenomeManager();
             _brainCalculator = new BrainCalculator();
+
+            _brainCaracteristic = caracteristics;
         }
 
 
@@ -33,35 +35,7 @@ namespace NeuralNetwork_Test_cSharp
         public List<UnitWrapper> InitialyzeUnits()
         {
             GenerationId = 0;
-            _caracteristic = new BrainCaracteristics
-            {
-                IsDecisionBrain = true,
-                BrainName = "Main",
-                InputLayer = new LayerCaracteristics(0, LayerTypeEnum.Input)
-                {
-                    NeuronNumber = 4,
-                    ActivationFunction = ActivationFunctionEnum.Identity,
-                    ActivationFunction90PercentTreshold = 0,
-                    NeuronTreshold = 0
-                },
-                NeutralLayers = new List<LayerCaracteristics> { new LayerCaracteristics(1, LayerTypeEnum.Neutral){
-                    NeuronNumber = 2,
-                    ActivationFunction = ActivationFunctionEnum.Tanh,
-                    ActivationFunction90PercentTreshold = 1f,
-                }, },
-                OutputLayer = new LayerCaracteristics(2, LayerTypeEnum.Output)
-                {
-                    NeuronNumber = 4,
-                    ActivationFunction = ActivationFunctionEnum.Sigmoid,
-                    ActivationFunction90PercentTreshold = 1f,
-                    NeuronTreshold = 0f,
-                },
-                GenomeCaracteristics = new GenomeCaracteristics
-                {
-                    GeneNumber = 50,
-                    WeighBytesNumber = 4
-                }
-            };
+            
 
             var units = GenerateRandomUnits(_simulationParameters.PopulationNumber);
 
@@ -75,7 +49,7 @@ namespace NeuralNetwork_Test_cSharp
         {
             var result = new List<UnitWrapper>();
 
-            var genomes = _genomeManager.GenomesListGet(unitNumber, _caracteristic).Select(t => new GenomeWrapper { Genome = t });
+            var genomes = _genomeManager.GenomesListGet(unitNumber, _brainCaracteristic).Select(t => new GenomeWrapper { Genome = t });
             var graphs = GenomeGraphGet(genomes.ToList());
 
             var units = _genomeManager.UnitsFromGenomeGraphList(graphs);
@@ -105,7 +79,7 @@ namespace NeuralNetwork_Test_cSharp
                     {
                         new GenomeCaracteristicPair
                         {
-                            Caracteristics = _caracteristic,
+                            Caracteristics = _brainCaracteristic,
                             Genome = genome.Genome
                         }
                     }
@@ -119,7 +93,6 @@ namespace NeuralNetwork_Test_cSharp
         {
             for (int i = 0; i < _simulationParameters.UnitLifeSpan; i++)
                 ExecuteLifeStep();
-            Console.WriteLine();
         }
 
         private void ExecuteLifeStep()
@@ -133,16 +106,6 @@ namespace NeuralNetwork_Test_cSharp
                 };
 
                 _brainCalculator.BrainGraphCompute(currentUnit.Unit.BrainGraph, inputs);
-
-                //if (j == 0)
-                //{
-                //    var message = new StringBuilder("Inputs : ");
-                //    foreach(var input in inputs["Main"])
-                //        message.Append($"{input.ToString()},");
-                //
-                //    Console.WriteLine(message.ToString());
-                //}
-
                 MoveUnit(currentUnit, false);
             }
         }
@@ -329,7 +292,7 @@ namespace NeuralNetwork_Test_cSharp
                 {
                     var genomeA = couple.parentA.Unit.BrainGraph.BrainNodes[brainName].Genome;
                     var genomeB = couple.parentB.Unit.BrainGraph.BrainNodes[brainName].Genome;
-                    var mixedGenome = _genomeManager.GenomeCrossOverGet(genomeA, genomeB, _caracteristic, 1, 0.001f);
+                    var mixedGenome = _genomeManager.GenomeCrossOverGet(genomeA, genomeB, _brainCaracteristic, 1, 0.001f);
 
                     if (result.TryGetValue(brainName, out var genomes))
                         genomes.Add(new GenomeWrapper

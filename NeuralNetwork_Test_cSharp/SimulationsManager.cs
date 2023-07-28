@@ -1,4 +1,5 @@
-﻿using NeuralNetwork_Test_cSharp.DTO;
+﻿using NeuralNetwork.Abstraction.Model;
+using NeuralNetwork_Test_cSharp.DTO;
 using System.Text;
 
 namespace NeuralNetwork_Test_cSharp
@@ -8,8 +9,7 @@ namespace NeuralNetwork_Test_cSharp
         private LifeManager _lifeManager;
         private DatabaseGateway _databaseGateway;
 
-        private SimulationParameters _simulationParameters;
-        private float _endConditionTreshold = 0.95f;
+        private float _endConditionTreshold;
 
         public SimulationsManager(string connexionString, bool cleanDatabase)
         {
@@ -20,16 +20,18 @@ namespace NeuralNetwork_Test_cSharp
             _databaseGateway = new DatabaseGateway(connexionString);
         }
 
-        public async Task InitialyzeNewSimulationAsync(SimulationParameters simulationParameters)
+
+        public async Task InitialyzeNewSimulationAsync(SimulationParameters simulationParameters, BrainCaracteristics brainCaracteristics, float endConditionTreshold = 0.95f)
         {
-            _simulationParameters = simulationParameters;
+            _endConditionTreshold = endConditionTreshold;
+
             //Store simulation parameters
             await _databaseGateway.SimulationStoreAsync(simulationParameters).ConfigureAwait(false);
             //GetLastSimulationId
-            _simulationParameters.SimulationId = await _databaseGateway.LastSimulationIdGetAsync().ConfigureAwait(false);
+            simulationParameters.SimulationId = await _databaseGateway.LastSimulationIdGetAsync().ConfigureAwait(false);
 
             //CreateFirstUnits
-            _lifeManager = new LifeManager(simulationParameters);
+            _lifeManager = new LifeManager(simulationParameters, brainCaracteristics);
             _lifeManager.InitialyzeUnits();
            
         }
@@ -39,17 +41,16 @@ namespace NeuralNetwork_Test_cSharp
             var endCondition = false;
             while (endCondition == false)
             {
-                var consoleLogs = new StringBuilder($"Starting generation {_lifeManager.GenerationId}\n");
-                var start = DateTime.UtcNow;                
+                var consoleLogs = new StringBuilder($"Starting generation {_lifeManager.GenerationId}\n");             
                 
                 _lifeManager.ExecuteGenerationLife();
                 var meanScore = _lifeManager.UnitScoreAssign();
 
-                await StoreDatasAsync().ConfigureAwait(false);
+                await StoreGenerationDatasAsync().ConfigureAwait(false);
 
                 var survivorNumber = _lifeManager.SurvivorNumberCount();
                 var randomUnitNumber = _lifeManager.ReproduceUnits();
-                endCondition = ((float)survivorNumber / _simulationParameters.PopulationNumber) >= _endConditionTreshold;
+                endCondition = ((float)survivorNumber / _lifeManager.PopulationNumber) >= _endConditionTreshold;
 
                 consoleLogs.AppendLine($"Survivor number : {survivorNumber}");
                 consoleLogs.AppendLine($"Random unit number : {randomUnitNumber}");
@@ -62,9 +63,8 @@ namespace NeuralNetwork_Test_cSharp
         }
 
         
-
         // Called after each generation
-        public async Task StoreDatasAsync()
+        private async Task StoreGenerationDatasAsync()
         {
             await _databaseGateway.UnitsStoreAsync(_lifeManager.Units).ConfigureAwait(false);
             await _databaseGateway.UnitStepsStoreAsync(_lifeManager.Units);
