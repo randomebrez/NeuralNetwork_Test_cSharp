@@ -70,6 +70,18 @@ namespace NeuralNetwork_Test_cSharp
                 throw new Exception("Error while adding unit step entries in database", e);
             }
         }
+        public async Task GenerationResultStoreAsync(GenerationResult result)
+        {
+            try
+            {
+                await _context.GenerationResults.AddAsync(DbMapper.ToDb(result)).ConfigureAwait(false);
+                await _context.SaveChangesAsync().ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                throw new Exception("Error while adding a new generation entry in database", e);
+            }
+        }
 
         private void ClearChangeTracker()
         {

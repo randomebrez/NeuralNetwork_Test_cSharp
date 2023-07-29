@@ -18,6 +18,7 @@ namespace NeuralNetwork_Test_cSharp.DTO
         }
 
         public DbSet<SimulationDb> Simulations { get; set; }
+        public DbSet<GenerationResultDb> GenerationResults { get; set; }
         public DbSet<UnitDb> Units { get; set; }
         public DbSet<UnitStepDb> UnitSteps { get; set; }
     }

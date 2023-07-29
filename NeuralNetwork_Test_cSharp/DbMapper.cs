@@ -33,6 +33,17 @@ namespace NeuralNetwork_Test_cSharp
             return simulationDb;
         }
 
+        public static GenerationResultDb ToDb(GenerationResult result)
+        {
+            return new GenerationResultDb
+            {
+                GenerationNumber = result.GenerationNumber,
+                SimulationId = result.SimulationId,
+                MeanScore = result.MeanScore,
+                SurvivorNumber = result.SurvivorNumber
+            };
+        }
+
         public static UnitDb ToDb(UnitWrapper unit)
         {
             return new UnitDb

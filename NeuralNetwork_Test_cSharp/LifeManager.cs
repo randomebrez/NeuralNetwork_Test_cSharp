@@ -384,10 +384,10 @@ namespace NeuralNetwork_Test_cSharp
                 var currentXpos = Units[i].CurrentPosition.GetCoordinate(0);
                 var currentYpos = Units[i].CurrentPosition.GetCoordinate(1);
 
-                var horizontalScore = Math.Abs(currentXpos - _simulationParameters.RecXmin) + Math.Abs(_simulationParameters.RecXmax - currentXpos) - (_simulationParameters.RecXmax - _simulationParameters.RecXmin);
-                var verticalScore = Math.Abs(currentYpos - _simulationParameters.RecYmin) + Math.Abs(_simulationParameters.RecYmax - currentYpos) - (_simulationParameters.RecYmax - _simulationParameters.RecYmin);
+                var horizontalScore = Math.Abs(currentXpos - _simulationParameters.RecXmin) + Math.Abs(currentXpos - _simulationParameters.RecXmax) - (_simulationParameters.RecXmax - _simulationParameters.RecXmin);
+                var verticalScore = Math.Abs(currentYpos - _simulationParameters.RecYmin) + Math.Abs(currentYpos- _simulationParameters.RecYmax) - (_simulationParameters.RecYmax - _simulationParameters.RecYmin);
 
-                var unitScore = (float)(Math.Pow(horizontalScore, 2) + Math.Pow(verticalScore, 1));
+                var unitScore = (float)(Math.Pow(horizontalScore, 1.1f) + Math.Pow(verticalScore, 1f));
                 Units[i].Score = unitScore;
 
                 meanScore += unitScore;

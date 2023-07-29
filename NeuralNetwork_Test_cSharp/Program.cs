@@ -11,15 +11,15 @@ var simulationParameters = new SimulationParameters
         {0, (-50, 50)},
         {1, (-40, 40)},
     },
-    //SelectionShape = SelectionShapeEnum.Rectangle,
-    //RecXmin = -15,
-    //RecXmax = 0,
-    //RecYmin = 0,
-    //RecYmax = 10
-    SelectionShape = SelectionShapeEnum.Circular,
-    Radius = 10,
-    xCenter = 0,
-    yCenter = 0
+    SelectionShape = SelectionShapeEnum.Rectangle,
+    RecXmin = -15,
+    RecXmax = 0,
+    RecYmin = 0,
+    RecYmax = 10
+    //SelectionShape = SelectionShapeEnum.Circular,
+    //Radius = 10,
+    //xCenter = 0,
+    //yCenter = 0
 };
 var brainCaracteristics = new BrainCaracteristics
 {
@@ -33,7 +33,7 @@ var brainCaracteristics = new BrainCaracteristics
         NeuronTreshold = 0
     },
     NeutralLayers = new List<LayerCaracteristics> { new LayerCaracteristics(1, LayerTypeEnum.Neutral){
-                    NeuronNumber = 2,
+                    NeuronNumber = 1,
                     ActivationFunction = ActivationFunctionEnum.Tanh,
                     ActivationFunction90PercentTreshold = 2f,
                 }, },

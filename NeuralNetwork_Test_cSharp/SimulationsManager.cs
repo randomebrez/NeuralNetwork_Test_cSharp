@@ -10,6 +10,7 @@ namespace NeuralNetwork_Test_cSharp
         private DatabaseGateway _databaseGateway;
 
         private float _endConditionTreshold;
+        private int _simulationId;
 
         public SimulationsManager(string connexionString, bool cleanDatabase)
         {
@@ -28,7 +29,8 @@ namespace NeuralNetwork_Test_cSharp
             //Store simulation parameters
             await _databaseGateway.SimulationStoreAsync(simulationParameters).ConfigureAwait(false);
             //GetLastSimulationId
-            simulationParameters.SimulationId = await _databaseGateway.LastSimulationIdGetAsync().ConfigureAwait(false);
+            _simulationId = await _databaseGateway.LastSimulationIdGetAsync().ConfigureAwait(false); ;
+            simulationParameters.SimulationId = _simulationId;
 
             //CreateFirstUnits
             _lifeManager = new LifeManager(simulationParameters, brainCaracteristics);
@@ -45,10 +47,17 @@ namespace NeuralNetwork_Test_cSharp
                 
                 _lifeManager.ExecuteGenerationLife();
                 var meanScore = _lifeManager.UnitScoreAssign();
-
-                await StoreGenerationDatasAsync().ConfigureAwait(false);
-
                 var survivorNumber = _lifeManager.SurvivorNumberCount();
+                var generationResult = new GenerationResult
+                {
+                    SimulationId = _simulationId,
+                    GenerationNumber = _lifeManager.GenerationId,
+                    MeanScore = meanScore,
+                    SurvivorNumber = survivorNumber
+                };
+
+                await StoreGenerationDatasAsync(generationResult).ConfigureAwait(false);
+
                 var randomUnitNumber = _lifeManager.ReproduceUnits();
                 endCondition = ((float)survivorNumber / _lifeManager.PopulationNumber) >= _endConditionTreshold;
 
@@ -64,10 +73,11 @@ namespace NeuralNetwork_Test_cSharp
 
         
         // Called after each generation
-        private async Task StoreGenerationDatasAsync()
+        private async Task StoreGenerationDatasAsync(GenerationResult generationResult)
         {
             await _databaseGateway.UnitsStoreAsync(_lifeManager.Units).ConfigureAwait(false);
             await _databaseGateway.UnitStepsStoreAsync(_lifeManager.Units);
+            await _databaseGateway.GenerationResultStoreAsync(generationResult).ConfigureAwait(false);
         }
     }
 }
