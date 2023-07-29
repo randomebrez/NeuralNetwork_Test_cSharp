@@ -59,7 +59,7 @@ namespace NeuralNetwork_Test_cSharp
             {
                 var dbUnitSteps = new List<UnitStepDb>();
                 for(int i = 0; i < units.Length; i++)
-                    dbUnitSteps.AddRange(DbMapper.ToDb(units[i].Identifier.ToString(), units[i].XPos, units[i].YPos));
+                    dbUnitSteps.AddRange(DbMapper.ToDb(units[i].Unit.Identifier.ToString(), units[i].XPos, units[i].YPos));
 
                 await _context.UnitSteps.AddRangeAsync(dbUnitSteps).ConfigureAwait(false);
                 await _context.SaveChangesAsync().ConfigureAwait(false);

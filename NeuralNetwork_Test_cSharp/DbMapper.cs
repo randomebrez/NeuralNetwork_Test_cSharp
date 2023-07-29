@@ -37,7 +37,7 @@ namespace NeuralNetwork_Test_cSharp
         {
             return new UnitDb
             {
-                Identifier = unit.Identifier.ToString(),
+                Identifier = unit.Unit.Identifier.ToString(),
                 ParentA = unit.Unit.ParentA.ToString(),
                 ParentB = unit.Unit.ParentB.ToString(),
                 GenerationId = unit.GenerationId,

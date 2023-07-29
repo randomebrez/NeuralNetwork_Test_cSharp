@@ -108,14 +108,14 @@ namespace NeuralNetwork_Test_cSharp
             {
                 var currentUnit = Units[j];
 
-                UnitCompute(currentUnit);
-                UnitMove(currentUnit);
+                var highestOutputIndex = UnitCompute(currentUnit);
+                UnitMove(currentUnit, highestOutputIndex);
             }
         }
 
 
         // Unit brain managment
-        private void UnitCompute(UnitWrapper unit)
+        private int UnitCompute(UnitWrapper unit)
         {
             var inputs = new Dictionary<string, List<float>>
                 {
@@ -123,6 +123,7 @@ namespace NeuralNetwork_Test_cSharp
                 };
 
             _brainCalculator.BrainGraphCompute(unit.Unit.BrainGraph, inputs);
+            return HighestOutputGet(unit.Unit.BrainGraph.DecisionBrain).index;
         }
         private List<float> GetInputs(UnitWrapper unit)
         {
@@ -185,10 +186,9 @@ namespace NeuralNetwork_Test_cSharp
 
 
         // Unit Movement
-        private void UnitMove(UnitWrapper unit)
+        private void UnitMove(UnitWrapper unit, int outputIndex)
         {
-            var highestOutput = HighestOutputGet(unit.Unit.BrainGraph.DecisionBrain);
-            UnitOutputInterpret(unit, highestOutput.index);
+            UnitOutputInterpret(unit, outputIndex);
 
             // Store positions to save in DB
             unit.XPos.Add(unit.CurrentPosition.GetCoordinate(0));
@@ -363,7 +363,7 @@ namespace NeuralNetwork_Test_cSharp
                 var currentXpos = Units[i].CurrentPosition.GetCoordinate(0);
                 var currentYpos = Units[i].CurrentPosition.GetCoordinate(1);
 
-                var centerDist = (currentXpos - xCenter) * (currentXpos - xCenter) + (currentYpos - yCenter) * (currentYpos - yCenter);
+                var centerDist = (float)(Math.Pow(currentXpos - xCenter, 2) + Math.Pow(currentYpos - yCenter, 2));
                 Units[i].Score = centerDist;
 
                 meanScore += centerDist;
@@ -384,7 +384,10 @@ namespace NeuralNetwork_Test_cSharp
                 var currentXpos = Units[i].CurrentPosition.GetCoordinate(0);
                 var currentYpos = Units[i].CurrentPosition.GetCoordinate(1);
 
-                var unitScore = (float)(Math.Pow(Math.Abs((currentXpos - _simulationParameters.RecXmin) - (_simulationParameters.RecXmax - currentXpos)), 2) + Math.Pow(Math.Abs((currentYpos - _simulationParameters.RecYmin) - (_simulationParameters.RecYmax - currentYpos)), 2));
+                var horizontalScore = Math.Abs(currentXpos - _simulationParameters.RecXmin) + Math.Abs(_simulationParameters.RecXmax - currentXpos) - (_simulationParameters.RecXmax - _simulationParameters.RecXmin);
+                var verticalScore = Math.Abs(currentYpos - _simulationParameters.RecYmin) + Math.Abs(_simulationParameters.RecYmax - currentYpos) - (_simulationParameters.RecYmax - _simulationParameters.RecYmin);
+
+                var unitScore = (float)(Math.Pow(horizontalScore, 2) + Math.Pow(verticalScore, 1));
                 Units[i].Score = unitScore;
 
                 meanScore += unitScore;

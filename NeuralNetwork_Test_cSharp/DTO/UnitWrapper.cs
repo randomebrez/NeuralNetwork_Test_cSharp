@@ -10,7 +10,6 @@ namespace NeuralNetwork_Test_cSharp.DTO
             YPos = new List<float>();
         }
 
-        public Guid Identifier { get; private set; } = Guid.NewGuid();
         public int SimulationId { get; set; }
         public int GenerationId { get; set; }
         public Unit Unit { get; set; }
