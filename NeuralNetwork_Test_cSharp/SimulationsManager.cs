@@ -11,6 +11,8 @@ namespace NeuralNetwork_Test_cSharp
 
         private float _endConditionTreshold;
         private int _simulationId;
+        private int _crossOverNumber;
+        private float _mutationRate;
 
         public SimulationsManager(string connexionString, bool cleanDatabase)
         {
@@ -22,8 +24,10 @@ namespace NeuralNetwork_Test_cSharp
         }
 
 
-        public async Task InitialyzeNewSimulationAsync(SimulationParameters simulationParameters, BrainCaracteristics brainCaracteristics, float endConditionTreshold = 0.95f)
+        public async Task InitialyzeNewSimulationAsync(SimulationParameters simulationParameters, BrainCaracteristics brainCaracteristics, int crossOverNumber, float mutationRate, float endConditionTreshold = 0.95f)
         {
+            _crossOverNumber = crossOverNumber;
+            _mutationRate = mutationRate;
             _endConditionTreshold = endConditionTreshold;
 
             //Store simulation parameters
@@ -38,7 +42,7 @@ namespace NeuralNetwork_Test_cSharp
            
         }
 
-        public async Task ExecuteLifeAsync()
+        public async Task ExecuteLifeAsync(int maxGeneration = 300)
         {
             var endCondition = false;
             while (endCondition == false)
@@ -58,17 +62,15 @@ namespace NeuralNetwork_Test_cSharp
 
                 await StoreGenerationDatasAsync(generationResult).ConfigureAwait(false);
 
-                var randomUnitNumber = _lifeManager.ReproduceUnits();
-                endCondition = ((float)survivorNumber / _lifeManager.PopulationNumber) >= _endConditionTreshold;
+                var randomUnitNumber = _lifeManager.ReproduceUnits(_crossOverNumber, _mutationRate);
+                endCondition = ((float)survivorNumber / _lifeManager.PopulationNumber) >= _endConditionTreshold || _lifeManager.GenerationId >= maxGeneration;
 
                 consoleLogs.AppendLine($"Survivor number : {survivorNumber}");
                 consoleLogs.AppendLine($"Random unit number : {randomUnitNumber}");
                 consoleLogs.AppendLine($"Mean score : {meanScore}");
                 consoleLogs.AppendLine();
                 Console.WriteLine(consoleLogs.ToString());
-            }
-            Console.WriteLine("gg");
-            
+            }            
         }
 
         

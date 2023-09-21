@@ -30,7 +30,7 @@ namespace NeuralNetwork_Test_cSharp
         }
 
 
-        // Initialisation
+        // Initialisation & tools
         public List<UnitWrapper> InitialyzeUnits()
         {
             GenerationId = 0;
@@ -70,6 +70,7 @@ namespace NeuralNetwork_Test_cSharp
                 SimulationId = _simulationParameters.SimulationId,
                 GenerationId = GenerationId
             };
+            newUnit.Unit.MaxChildNumber = 10;
             newUnit.XPos = new List<float> { newUnit.CurrentPosition.GetCoordinate(0) };
             newUnit.YPos = new List<float> { newUnit.CurrentPosition.GetCoordinate(1) };
 
@@ -79,19 +80,23 @@ namespace NeuralNetwork_Test_cSharp
         {
             var graphs = new List<GenomeGraph>();
             foreach (var genome in genomes)
-                graphs.Add(new GenomeGraph
+            {
+                var genomeGraph = new GenomeGraph
                 {
                     ParentA = genome.ParentA,
-                    ParentB = genome.ParentB,
-                    GenomeNodes = new List<GenomeCaracteristicPair>
+                    ParentB = genome.ParentB
+                };
+                var genomeNodes = new List<GenomeCaracteristicPair>
+                {
+                    new GenomeCaracteristicPair
                     {
-                        new GenomeCaracteristicPair
-                        {
-                            Caracteristics = _brainCaracteristic,
-                            Genome = genome.Genome
-                        }
+                        Caracteristics = _brainCaracteristic,
+                        Genome = genome.Genome
                     }
-                });
+                };
+                genomeGraph.InitGraph(genomeNodes, new List<GenericEdge<GenomeCaracteristicPair>>());
+                graphs.Add(genomeGraph);
+            }
             return graphs;
         }
 
@@ -163,9 +168,17 @@ namespace NeuralNetwork_Test_cSharp
                     Move(unit, 1, 1);
                     break;
                 case 4:
-                    RandomMove(unit);
+                    Move(unit, 0, 1f);
+                    Move(unit, 1, 1f);
                     break;
                 case 5:
+                    Move(unit, 0, -1f);
+                    Move(unit, 1, -1f);
+                    break;
+                case 6:
+                    RandomMove(unit);
+                    break;
+                case 7:
                     //No move
                     break;
             }
@@ -242,13 +255,13 @@ namespace NeuralNetwork_Test_cSharp
 
 
         // Reproduction
-        public int ReproduceUnits()
+        public int ReproduceUnits(int crossOverNumber, float mutationRate)
         {
             GenerationId++;
 
             //Select best units
-            var bestUnits = SelectBestUnits(0.4f);
-            var mixedGenomes = GetMixedGenomes(bestUnits);
+            var bestUnits = SelectBestUnits(0.12f);
+            var mixedGenomes = GetMixedGenomes(bestUnits, crossOverNumber, mutationRate);
 
             // Tres bizarre, il faut un graphe a suivre pour reconstruire à partir du dico de <brainName, List<Genome>>
             var genomes = mixedGenomes.ContainsKey("Main") ? mixedGenomes["Main"] : new List<GenomeWrapper>();
@@ -265,7 +278,7 @@ namespace NeuralNetwork_Test_cSharp
 
             return remainingUnitToGenerate;
         }
-        private Dictionary<string, List<GenomeWrapper>> GetMixedGenomes(List<UnitWrapper> bestUnits)
+        private Dictionary<string, List<GenomeWrapper>> GetMixedGenomes(List<UnitWrapper> bestUnits, int crossOverNumber, float mutationRate)
         {
             var result = new Dictionary<string, List<GenomeWrapper>>();
             var couples = CreateCouples(bestUnits);
@@ -276,7 +289,7 @@ namespace NeuralNetwork_Test_cSharp
                 {
                     var genomeA = couple.parentA.Unit.BrainGraph.BrainNodes[brainName].Genome;
                     var genomeB = couple.parentB.Unit.BrainGraph.BrainNodes[brainName].Genome;
-                    var mixedGenome = _genomeManager.GenomeCrossOverGet(genomeA, genomeB, _brainCaracteristic, 1, 0.001f);
+                    var mixedGenome = _genomeManager.GenomeCrossOverGet(genomeA, genomeB, _brainCaracteristic, crossOverNumber, mutationRate);
 
                     if (result.TryGetValue(brainName, out var genomes))
                         genomes.Add(new GenomeWrapper
@@ -387,7 +400,7 @@ namespace NeuralNetwork_Test_cSharp
                 var horizontalScore = Math.Abs(currentXpos - _simulationParameters.RecXmin) + Math.Abs(currentXpos - _simulationParameters.RecXmax) - (_simulationParameters.RecXmax - _simulationParameters.RecXmin);
                 var verticalScore = Math.Abs(currentYpos - _simulationParameters.RecYmin) + Math.Abs(currentYpos- _simulationParameters.RecYmax) - (_simulationParameters.RecYmax - _simulationParameters.RecYmin);
 
-                var unitScore = (float)(Math.Pow(horizontalScore, 1.1f) + Math.Pow(verticalScore, 1f));
+                var unitScore = (float)(Math.Pow(horizontalScore, 1) + Math.Pow(verticalScore, 1));
                 Units[i].Score = unitScore;
 
                 meanScore += unitScore;
